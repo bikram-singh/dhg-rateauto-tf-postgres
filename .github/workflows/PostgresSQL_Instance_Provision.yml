@@ -1,0 +1,220 @@
+name: PostgreSQL Instance Provision
+
+on:
+  # ----------------------------------------------------------
+  # Allow manual execution from GitHub Actions UI
+  # Now supports selecting an environment (dev/stage/prod)
+  # ----------------------------------------------------------
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Select environment to deploy (dev, test, stage, prod)"
+        required: false
+        default: "dev"
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  TF_VERSION: "1.8.5"
+  TF_VAR_db_password: ${{ secrets.TF_VAR_db_password }}
+
+jobs:
+  # ----------------------------------------
+  # Terraform Init
+  # ----------------------------------------
+  init:
+    name: Terraform Init
+    runs-on: uhg-runner
+    outputs:
+      env_name: ${{ steps.detect-env.outputs.env_name }}
+      backend_file: ${{ steps.resolve-files.outputs.backend_file }}
+      vars_file: ${{ steps.resolve-files.outputs.vars_file }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Detect environment
+        id: detect-env
+        run: |
+          echo "🔍 Detecting environment..."
+          CHANGED_FILES=$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" || echo "")
+          ENV_NAME=""
+
+          if [ -n "${{ github.event.inputs.environment }}" ]; then
+            ENV_NAME="${{ github.event.inputs.environment }}"
+            echo "✅ Using manually selected environment: ${{ github.event.inputs.environment }}"
+          elif echo "$CHANGED_FILES" | grep -q 'environments/dev/'; then
+            ENV_NAME="dev"
+            echo "✅ Auto-detected environment: dev"
+          elif echo "$CHANGED_FILES" | grep -q 'environments/test/'; then
+            ENV_NAME="test"
+            echo "✅ Auto-detected environment: test"
+          elif echo "$CHANGED_FILES" | grep -q 'environments/stage/'; then
+            ENV_NAME="stage"
+            echo "✅ Auto-detected environment: stage"
+          elif echo "$CHANGED_FILES" | grep -q 'environments/prod/'; then
+            ENV_NAME="prod"
+            echo "✅ Auto-detected environment: prod"
+          else
+            echo "⚠️ No environment changes detected — defaulting to dev."
+            ENV_NAME="dev"
+          fi
+
+          echo "env_name=$ENV_NAME" >> $GITHUB_OUTPUT
+          echo "✅ Environment set to: $ENV_NAME"
+
+      - name: Resolve Terraform files
+        id: resolve-files
+        run: |
+          ENV_NAME="${{ steps.detect-env.outputs.env_name }}"
+          BACKEND_FILE="environments/${ENV_NAME}/retail-like-rateauto-${ENV_NAME}-postgres.backend.tfvars"
+          VARS_FILE="environments/${ENV_NAME}/retail-like-rateauto-${ENV_NAME}-postgres.tfvars"
+
+          if [ ! -f "$BACKEND_FILE" ]; then
+            echo "❌ Backend config file not found: $BACKEND_FILE"
+            exit 1
+          fi
+
+          if [ ! -f "$VARS_FILE" ]; then
+            echo "❌ Terraform var file not found: $VARS_FILE"
+            exit 1
+          fi
+
+          echo "backend_file=$BACKEND_FILE" >> $GITHUB_OUTPUT
+          echo "vars_file=$VARS_FILE" >> $GITHUB_OUTPUT
+          echo "✅ Backend file: $BACKEND_FILE"
+          echo "✅ Vars file: $VARS_FILE"
+
+      - name: Google Cloud Auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER_NONPROD }}
+          service_account: ${{ secrets.GCP_WIF_SERVICE_ACCOUNT_NONPROD }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Init
+        run: |
+          echo "🚀 Initializing Terraform for ${{ steps.detect-env.outputs.env_name }}..."
+          terraform init -backend-config="${{ steps.resolve-files.outputs.backend_file }}"
+
+      - name: Terraform Format (Auto Fix)
+        run: terraform fmt -recursive
+
+      - name: Terraform Format Check
+        run: terraform fmt -check
+
+      - name: Terraform Validate
+        run: terraform validate
+
+  # ----------------------------------------
+  # Terraform Plan
+  # ----------------------------------------
+  plan:
+    name: Terraform Plan
+    runs-on: uhg-runner
+    needs: init
+    outputs:
+      env_name: ${{ needs.init.outputs.env_name }}
+      backend_file: ${{ needs.init.outputs.backend_file }}
+      vars_file: ${{ needs.init.outputs.vars_file }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Google Cloud Auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER_NONPROD }}
+          service_account: ${{ secrets.GCP_WIF_SERVICE_ACCOUNT_NONPROD }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Init
+        run: terraform init -backend-config="${{ needs.init.outputs.backend_file }}"
+
+      - name: Import existing SQL instance (if exists)
+        run: |
+          INSTANCE_NAME=$(grep 'instance_name' "${{ needs.init.outputs.vars_file }}" | awk -F'"' '{print $2}')
+          PROJECT_ID=$(grep '^project' "${{ needs.init.outputs.vars_file }}" | awk -F'"' '{print $2}')
+          PSC_IP_NAME=$(grep 'psc_ip_name' "${{ needs.init.outputs.vars_file }}" | awk -F'"' '{print $2}')
+          REGION=$(grep '^region' "${{ needs.init.outputs.vars_file }}" | awk -F'"' '{print $2}')
+
+          echo "--- Checking SQL instance ---"
+          if terraform state show google_sql_database_instance.dbtest1 > /dev/null 2>&1; then
+            echo "✅ SQL instance already in state, skipping import."
+          else
+            echo "⚠️ SQL instance not in state. Attempting import..."
+            terraform import \
+              -var-file="${{ needs.init.outputs.vars_file }}" \
+              google_sql_database_instance.dbtest1 "$PROJECT_ID/$INSTANCE_NAME" || echo "ℹ️ SQL instance import failed or does not exist yet, continuing."
+          fi
+
+          echo "--- Checking PSC IP address ---"
+          if terraform state show google_compute_address.psc_ip_address > /dev/null 2>&1; then
+            echo "✅ PSC IP address already in state, skipping import."
+          else
+            echo "⚠️ PSC IP address not in state. Attempting import..."
+            terraform import \
+              -var-file="${{ needs.init.outputs.vars_file }}" \
+              google_compute_address.psc_ip_address "projects/$PROJECT_ID/regions/$REGION/addresses/$PSC_IP_NAME" || echo "ℹ️ PSC IP import failed or does not exist yet, continuing."
+          fi
+          fi
+
+      - name: Terraform Plan
+        run: |
+          terraform plan \
+            -var-file="${{ needs.init.outputs.vars_file }}" \
+            -out=tfplan
+
+      - name: Upload tfplan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: tfplan
+          retention-days: 1
+
+  # ----------------------------------------
+  # Terraform Apply
+  # ----------------------------------------
+  apply:
+    name: Terraform Apply
+    runs-on: uhg-runner
+    needs: plan
+    if: github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Google Cloud Auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER_NONPROD }}
+          service_account: ${{ secrets.GCP_WIF_SERVICE_ACCOUNT_NONPROD }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Init
+        run: terraform init -backend-config="${{ needs.plan.outputs.backend_file }}"
+
+      - name: Download tfplan artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
