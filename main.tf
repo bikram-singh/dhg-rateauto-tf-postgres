@@ -32,7 +32,6 @@ resource "google_sql_database_instance" "dbtest1" {
     }
 
     ip_configuration {
-      #ssl_mode      = "ENCRYPTED_ONLY"  # Cloud SQL for PostgreSQL does not support ssl_mode as a Terraform argument. Only Supported with google-beta provider
       ipv4_enabled = false
 
       psc_config {
@@ -48,7 +47,8 @@ resource "google_sql_database_instance" "dbtest1" {
 resource "google_sql_user" "db_user" {
   name     = var.db_user
   instance = google_sql_database_instance.dbtest1.name
-  password = var.db_password
+  project  = var.project        # ← added project explicitly
+  password = var.db_password    # ← this is now passed from GitHub Secret
 }
 
 resource "google_compute_address" "psc_ip_address" {

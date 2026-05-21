@@ -1,10 +1,6 @@
-name: Provision PostgreSQL Instance 
+name: Provision PostgreSQL Instance
 
 on:
-  # ----------------------------------------------------------
-  # Allow manual execution from GitHub Actions UI
-  # Now supports selecting an environment (dev/stage/prod)
-  # ----------------------------------------------------------
   workflow_dispatch:
     inputs:
       environment:
@@ -143,7 +139,7 @@ jobs:
       - name: Terraform Init
         run: terraform init -backend-config="${{ needs.init.outputs.backend_file }}"
 
-      - name: Import existing SQL instance (if exists)
+      - name: Import existing resources (if exist)
         run: |
           INSTANCE_NAME=$(grep 'instance_name' "${{ needs.init.outputs.vars_file }}" | awk -F'"' '{print $2}')
           PROJECT_ID=$(grep '^project' "${{ needs.init.outputs.vars_file }}" | awk -F'"' '{print $2}')
@@ -155,9 +151,15 @@ jobs:
             echo "✅ SQL instance already in state, skipping import."
           else
             echo "⚠️ SQL instance not in state. Attempting import..."
+            set +e
             terraform import \
               -var-file="${{ needs.init.outputs.vars_file }}" \
-              google_sql_database_instance.dbtest1 "$PROJECT_ID/$INSTANCE_NAME" || echo "ℹ️ SQL instance import failed or does not exist yet, continuing."
+              google_sql_database_instance.dbtest1 "$PROJECT_ID/$INSTANCE_NAME"
+            IMPORT_EXIT=$?
+            set -e
+            if [ $IMPORT_EXIT -ne 0 ]; then
+              echo "ℹ️ SQL instance import failed or does not exist yet, continuing."
+            fi
           fi
 
           echo "--- Checking PSC IP address ---"
@@ -165,9 +167,15 @@ jobs:
             echo "✅ PSC IP address already in state, skipping import."
           else
             echo "⚠️ PSC IP address not in state. Attempting import..."
+            set +e
             terraform import \
               -var-file="${{ needs.init.outputs.vars_file }}" \
-              google_compute_address.psc_ip_address "projects/$PROJECT_ID/regions/$REGION/addresses/$PSC_IP_NAME" || echo "ℹ️ PSC IP import failed or does not exist yet, continuing."
+              google_compute_address.psc_ip_address "projects/$PROJECT_ID/regions/$REGION/addresses/$PSC_IP_NAME"
+            IMPORT_EXIT=$?
+            set -e
+            if [ $IMPORT_EXIT -ne 0 ]; then
+              echo "ℹ️ PSC IP import failed or does not exist yet, continuing."
+            fi
           fi
 
       - name: Terraform Plan
@@ -216,4 +224,6 @@ jobs:
           name: tfplan
 
       - name: Terraform Apply
+        env:
+          TF_VAR_db_password: ${{ secrets.TF_VAR_db_password }}   # ← explicitly passed here too
         run: terraform apply -auto-approve tfplan

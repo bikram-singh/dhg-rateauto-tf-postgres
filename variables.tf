@@ -134,3 +134,10 @@ variable "team" {
   description = "Team label for the instance"
   type        = string
 }
+
+# ← Added: was causing "undeclared variable" warning
+variable "service-tier" {
+  description = "Service tier label"
+  type        = string
+  default     = ""
+}
