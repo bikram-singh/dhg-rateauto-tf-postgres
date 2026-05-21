@@ -169,7 +169,6 @@ jobs:
               -var-file="${{ needs.init.outputs.vars_file }}" \
               google_compute_address.psc_ip_address "projects/$PROJECT_ID/regions/$REGION/addresses/$PSC_IP_NAME" || echo "ℹ️ PSC IP import failed or does not exist yet, continuing."
           fi
-          fi
 
       - name: Terraform Plan
         run: |

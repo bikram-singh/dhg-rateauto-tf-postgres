@@ -20,7 +20,6 @@ db_user             = "postgres"
 
 team                = "database"
 environment         = "dev"
-service-tier        = "p3"
 
 # Backup Configuration
 backup_location           = "us"
