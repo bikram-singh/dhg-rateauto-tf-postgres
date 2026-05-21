@@ -26,7 +26,7 @@ jobs:
   # ----------------------------------------
   init:
     name: Terraform Init
-    runs-on: uhg-runner
+    runs-on: ubuntu-latest
     outputs:
       env_name: ${{ steps.detect-env.outputs.env_name }}
       backend_file: ${{ steps.resolve-files.outputs.backend_file }}
@@ -118,7 +118,7 @@ jobs:
   # ----------------------------------------
   plan:
     name: Terraform Plan
-    runs-on: uhg-runner
+    runs-on: ubuntu-latest
     needs: init
     outputs:
       env_name: ${{ needs.init.outputs.env_name }}
