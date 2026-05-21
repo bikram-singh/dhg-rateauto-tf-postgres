@@ -10,10 +10,10 @@ psc_ip_name         = "dhg-rateauto-postgres-stage-psc-ip"
 psc_endpoint_name   = "dhg-rateauto-postgres-stage-psc-endpoint"
 tier                = "db-custom-4-16384"
 disk_type           = "PD_SSD"
-disk_size           = 100
+disk_size           = 10
 disk_autoresize     = true
-cpu_count           = 2
-memory_size_gb      = 4
+cpu_count           = 1
+memory_size_gb      = 1.7
 db_user             = "postgres"
 
 # Labels
