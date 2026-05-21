@@ -70,8 +70,8 @@ jobs:
         id: resolve-files
         run: |
           ENV_NAME="${{ steps.detect-env.outputs.env_name }}"
-          BACKEND_FILE="environments/${ENV_NAME}/retail-like-rateauto-${ENV_NAME}-postgres.backend.tfvars"
-          VARS_FILE="environments/${ENV_NAME}/retail-like-rateauto-${ENV_NAME}-postgres.tfvars"
+          BACKEND_FILE="environments/${ENV_NAME}/dhg-rateauto-${ENV_NAME}-postgres.backend.tfvars"
+          VARS_FILE="environments/${ENV_NAME}/dhg-rateauto-${ENV_NAME}-postgres.tfvars"
 
           if [ ! -f "$BACKEND_FILE" ]; then
             echo "❌ Backend config file not found: $BACKEND_FILE"
