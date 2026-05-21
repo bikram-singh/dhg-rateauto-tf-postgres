@@ -1,4 +1,4 @@
-name: PostgreSQL Instance Provision
+name: Provision PostgreSQL Instance 
 
 on:
   # ----------------------------------------------------------
