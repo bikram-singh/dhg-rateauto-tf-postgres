@@ -1,9 +1,11 @@
 <div align="center">
 
+<img src="docs/gallery/DHG_logo.png" alt="DHG Logo" width="90" height="90"/>
+
 # 🐘 dhg-rateauto-tf-postgres
 
 ### Terraform · Cloud SQL PostgreSQL · Private Service Connect
-### DHG Rate Automation Platform — `dhg-vaccine-rateauto-nonpord`
+### DHG Rate Automation Platform - `dhg-vaccine-rateauto-nonpord`
 
 [![Terraform](https://img.shields.io/badge/Terraform-%3E%3D1.4-7B42BC?logo=terraform&logoColor=white)](https://www.terraform.io)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Cloud_SQL-336791?logo=postgresql&logoColor=white)](https://cloud.google.com/sql/docs/postgres)
@@ -14,7 +16,7 @@
 
 ---
 
-*Provisions a fully managed Cloud SQL PostgreSQL instance with Private Service Connect (PSC) — zero public internet exposure, automated backups, high availability, and enterprise-grade security for the DHG Vaccine Fee pricing platform.*
+*Provisions a fully managed Cloud SQL PostgreSQL instance with Private Service Connect (PSC) - zero public internet exposure, automated backups, high availability, and enterprise-grade security for the DHG Vaccine Fee pricing platform.*
 
 </div>
 
@@ -23,6 +25,7 @@
 ## 📋 Table of Contents
 
 - [Overview](#-overview)
+- [UI Gallery](#-ui-gallery)
 - [Why Cloud SQL with PSC](#-why-cloud-sql-with-psc)
 - [Architecture](#-architecture)
 - [Repository Structure](#-repository-structure)
@@ -48,9 +51,9 @@
 
 ## 🌐 Overview
 
-This repository provisions a **Cloud SQL PostgreSQL instance** for the DHG Rate Automation platform using Terraform. The database is the **data backbone** of the entire platform — storing vaccine pricing records, hospital information, departments, users, and 5,000+ pricing entries.
+This repository provisions a **Cloud SQL PostgreSQL instance** for the DHG Rate Automation platform using Terraform. The database is the **data backbone** of the entire platform - storing vaccine pricing records, hospital information, departments, users, and 5,000+ pricing entries.
 
-The key architectural decision is **Private Service Connect (PSC)** — the database has **no public IP address** and is completely inaccessible from the internet. The only way to reach it is through a private internal IP (`10.10.0.3`) within the VPC, from GKE pods running the FastAPI backend.
+The key architectural decision is **Private Service Connect (PSC)** - the database has **no public IP address** and is completely inaccessible from the internet. The only way to reach it is through a private internal IP (`10.10.0.3`) within the VPC, from GKE pods running the FastAPI backend.
 
 ### 🔑 Key Facts
 
@@ -58,7 +61,7 @@ The key architectural decision is **Private Service Connect (PSC)** — the data
 |---|---|
 | 🐘 **Database Engine** | PostgreSQL (Cloud SQL) |
 | 🌍 **Region** | `us-central1` |
-| 🔒 **Access** | Private only — no public IP |
+| 🔒 **Access** | Private only - no public IP |
 | 📍 **Private IP (PSC)** | `10.10.0.3:5432` |
 | 🏗️ **Database Name** | `dhg-vaccinefee-db` |
 | 👤 **DB User** | `dhg-vaccinefee-user` |
@@ -68,6 +71,31 @@ The key architectural decision is **Private Service Connect (PSC)** — the data
 | 🔐 **Password** | Stored in GitHub Secrets, injected via WIF |
 
 ---
+
+## 🖼️ UI Gallery
+
+> 📌 **Note:** All images are stored in `docs/gallery/`. Upload your screenshots there to display them here.
+
+### 🐘 Cloud SQL Instances - GCP Console
+![Cloud SQL Instances](docs/gallery/postgres-cloudsql-instances.png)
+
+---
+
+### 🟢 Dev Instance - Details
+![Postgres Dev Details](docs/gallery/postgres-dev-details.png)
+
+---
+
+### 🟡 Test Instance - Details
+![Postgres Test Details](docs/gallery/postgres-test-details.png)
+
+---
+
+### 🔵 Stage Instance - Details
+![Postgres Stage Details](docs/gallery/postgres-stage-details.png)
+
+---
+
 
 ## ⚡ Why Cloud SQL with PSC
 
@@ -92,7 +120,7 @@ The key architectural decision is **Private Service Connect (PSC)** — the data
 | Private IP (VPC Peering) | VPC-only access | Moderate | Low |
 | **PSC (our choice) ✅** | **Fully private, no peering** | **Moderate** | **Low** |
 
-PSC creates a **one-way private tunnel** from the consumer VPC (our GKE VPC) to the Cloud SQL producer network — without VPC peering, without route conflicts, and without any internet exposure.
+PSC creates a **one-way private tunnel** from the consumer VPC (our GKE VPC) to the Cloud SQL producer network - without VPC peering, without route conflicts, and without any internet exposure.
 
 ---
 
@@ -190,7 +218,7 @@ dhg-rateauto-tf-postgres/
 | ☁️ **Google Provider** | `~> 5.0` |
 | 🔌 **APIs enabled** | `sqladmin.googleapis.com`, `servicenetworking.googleapis.com`, `compute.googleapis.com` |
 | 🔐 **IAM permissions** | `roles/cloudsql.admin`, `roles/compute.networkAdmin` |
-| 🔑 **DB password** | Must be stored as GitHub Secret `DB_PASSWORD` — never in code |
+| 🔑 **DB password** | Must be stored as GitHub Secret `DB_PASSWORD` - never in code |
 
 Enable required APIs:
 
@@ -213,13 +241,13 @@ gcloud services enable \
 | 3 | `google_compute_address` | `psc_ip_address` | Internal static IP for PSC endpoint (`10.10.0.3`) |
 | 4 | `google_compute_forwarding_rule` | `consumer_psc_endpoint` | PSC forwarding rule connecting IP to Cloud SQL |
 
-**Total: 4 resources** — clean and purpose-built.
+**Total: 4 resources** - clean and purpose-built.
 
 ---
 
 ## 🔍 File-by-File Breakdown
 
-### 📄 `main.tf` — Core Resources (71 lines)
+### 📄 `main.tf` - Core Resources (71 lines)
 
 The entire infrastructure in 4 resource blocks:
 
@@ -261,7 +289,7 @@ resource "google_sql_user" "db_user" {
 }
 ```
 
-> 🔐 The password is marked `sensitive = true` in `variables.tf` — it never appears in plan/apply output or logs. It is passed directly from the GitHub Secret `DB_PASSWORD` via the CI/CD workflow.
+> 🔐 The password is marked `sensitive = true` in `variables.tf` - it never appears in plan/apply output or logs. It is passed directly from the GitHub Secret `DB_PASSWORD` via the CI/CD workflow.
 
 #### Block 3: PSC Internal IP
 
@@ -275,7 +303,7 @@ resource "google_compute_address" "psc_ip_address" {
 }
 ```
 
-This reserves a **static internal IP** from the VPC subnet range. By reserving it (rather than letting it be ephemeral), the IP `10.10.0.3` never changes — GKE pods and K8s secrets always use the same address.
+This reserves a **static internal IP** from the VPC subnet range. By reserving it (rather than letting it be ephemeral), the IP `10.10.0.3` never changes - GKE pods and K8s secrets always use the same address.
 
 #### Block 4: PSC Forwarding Rule
 
@@ -292,21 +320,21 @@ resource "google_compute_forwarding_rule" "consumer_psc_endpoint" {
 }
 ```
 
-The **forwarding rule** is the bridge between the private IP and the Cloud SQL PSC service attachment. `load_balancing_scheme = ""` (empty string) is a specific requirement for PSC forwarding rules — it tells GCP this is a PSC consumer endpoint, not a load balancer.
+The **forwarding rule** is the bridge between the private IP and the Cloud SQL PSC service attachment. `load_balancing_scheme = ""` (empty string) is a specific requirement for PSC forwarding rules - it tells GCP this is a PSC consumer endpoint, not a load balancer.
 
 ---
 
-### 📄 `variables.tf` — 26 Input Variables (143 lines)
+### 📄 `variables.tf` - 26 Input Variables (143 lines)
 
-Covers 5 groups of variables — see the full [Variables Reference](#-variables-reference).
+Covers 5 groups of variables - see the full [Variables Reference](#-variables-reference).
 
-Notable: `db_password` is the only `sensitive = true` variable — ensuring the password is never printed in logs.
+Notable: `db_password` is the only `sensitive = true` variable - ensuring the password is never printed in logs.
 
 ---
 
-### 📄 `output.tf` — 10 Outputs (60 lines)
+### 📄 `output.tf` - 10 Outputs (60 lines)
 
-The most valuable output is `psc_connection_instructions` — a heredoc that prints the complete connection details:
+The most valuable output is `psc_connection_instructions` - a heredoc that prints the complete connection details:
 
 ```hcl
 output "psc_connection_instructions" {
@@ -345,16 +373,16 @@ After `terraform apply`, run `terraform output psc_connection_instructions` to g
 
 | Variable | Type | Default | Required | Description |
 |---|---|---|---|---|
-| `instance_name` | `string` | — | ✅ | Cloud SQL instance name |
-| `database_version` | `string` | — | ✅ | PostgreSQL version (e.g. `POSTGRES_14`) |
-| `tier` | `string` | — | ✅ | Machine type (e.g. `db-custom-2-4096`) |
-| `edition` | `string` | — | ✅ | `ENTERPRISE` or `ENTERPRISE_PLUS` |
-| `disk_type` | `string` | — | ✅ | `PD_SSD` or `PD_HDD` |
-| `disk_size` | `number` | — | ✅ | Initial disk size in GB |
-| `disk_autoresize` | `bool` | — | ✅ | Auto-grow disk when full |
-| `availability_type` | `string` | — | ✅ | `ZONAL` (single zone) or `REGIONAL` (HA) |
-| `cpu_count` | `number` | — | ✅ | Number of vCPUs (for custom tier) |
-| `memory_size_gb` | `number` | — | ✅ | RAM in GB (for custom tier) |
+| `instance_name` | `string` | - | ✅ | Cloud SQL instance name |
+| `database_version` | `string` | - | ✅ | PostgreSQL version (e.g. `POSTGRES_14`) |
+| `tier` | `string` | - | ✅ | Machine type (e.g. `db-custom-2-4096`) |
+| `edition` | `string` | - | ✅ | `ENTERPRISE` or `ENTERPRISE_PLUS` |
+| `disk_type` | `string` | - | ✅ | `PD_SSD` or `PD_HDD` |
+| `disk_size` | `number` | - | ✅ | Initial disk size in GB |
+| `disk_autoresize` | `bool` | - | ✅ | Auto-grow disk when full |
+| `availability_type` | `string` | - | ✅ | `ZONAL` (single zone) or `REGIONAL` (HA) |
+| `cpu_count` | `number` | - | ✅ | Number of vCPUs (for custom tier) |
+| `memory_size_gb` | `number` | - | ✅ | RAM in GB (for custom tier) |
 | `deletion_protection` | `bool` | `true` | No | Prevent accidental deletion |
 
 ### 👤 Database User
@@ -405,7 +433,7 @@ After `terraform apply`, run `terraform output psc_connection_instructions` to g
 
 ## 🔬 Database Configuration Deep Dive
 
-### Instance Tier — `db-custom-2-4096`
+### Instance Tier - `db-custom-2-4096`
 
 Cloud SQL supports predefined and custom tiers:
 
@@ -418,11 +446,11 @@ db-custom-2-4096 = 2 vCPUs + 4 GB RAM
 |---|---|---|---|
 | `db-f1-micro` | Shared | 0.6 GB | Dev/test only |
 | `db-g1-small` | Shared | 1.7 GB | Light workloads |
-| `db-custom-2-4096` ✅ | 2 | 4 GB | **Our choice — dev/stage** |
+| `db-custom-2-4096` ✅ | 2 | 4 GB | **Our choice - dev/stage** |
 | `db-custom-4-8192` | 4 | 8 GB | Production |
 | `db-custom-8-16384` | 8 | 16 GB | High-traffic production |
 
-### Edition — `ENTERPRISE`
+### Edition - `ENTERPRISE`
 
 | Edition | Features | Cost |
 |---|---|---|
@@ -433,7 +461,7 @@ db-custom-2-4096 = 2 vCPUs + 4 GB RAM
 
 | Type | Description | Downtime on failure |
 |---|---|---|
-| `ZONAL` ✅ (dev) | Single zone — primary only | ~60 seconds |
+| `ZONAL` ✅ (dev) | Single zone - primary only | ~60 seconds |
 | `REGIONAL` (prod) | Primary + standby in different zones | ~30 seconds automatic failover |
 
 ### Disk Configuration
@@ -441,7 +469,7 @@ db-custom-2-4096 = 2 vCPUs + 4 GB RAM
 ```hcl
 disk_type       = "PD_SSD"   # SSD for low latency
 disk_size       = 20          # 20 GB initial
-disk_autoresize = true        # Auto-grows — no manual intervention needed
+disk_autoresize = true        # Auto-grows - no manual intervention needed
 ```
 
 > ⚠️ **Auto-resize only grows, never shrinks.** If temporary bulk inserts inflate the disk, it will stay at the larger size. Monitor disk usage in Cloud Monitoring.
@@ -519,7 +547,7 @@ backup_configuration {
 
 | Setting | Value | Notes |
 |---|---|---|
-| **Start time** | `00:00 UTC` | 5:30 AM IST — low traffic |
+| **Start time** | `00:00 UTC` | 5:30 AM IST - low traffic |
 | **Location** | `us` (multi-region) | Backups in multiple US regions |
 | **Retained backups** | `7` | One week of recovery points |
 | **Log retention** | `7 days` | For transaction log recovery |
@@ -554,21 +582,21 @@ This three-layer protection ensures you can never accidentally lose data.
 
 ## 🔄 High Availability
 
-### Current Setup (Dev) — ZONAL
+### Current Setup (Dev) - ZONAL
 
 ```hcl
 availability_type = "ZONAL"
 ```
 
-Single zone deployment — suitable for development and testing. If the zone goes down, Cloud SQL automatically restarts the instance (approximately 60 seconds of downtime).
+Single zone deployment - suitable for development and testing. If the zone goes down, Cloud SQL automatically restarts the instance (approximately 60 seconds of downtime).
 
-### Production Recommendation — REGIONAL
+### Production Recommendation - REGIONAL
 
 ```hcl
 availability_type = "REGIONAL"
 ```
 
-Regional HA provisions a **standby instance in a different zone** within the same region. Automatic failover occurs in ~30 seconds — no manual intervention required.
+Regional HA provisions a **standby instance in a different zone** within the same region. Automatic failover occurs in ~30 seconds - no manual intervention required.
 
 ```
 Primary Zone (us-central1-a)     Standby Zone (us-central1-b)
@@ -659,7 +687,7 @@ gcloud auth application-default login
 # 3. Initialise Terraform
 terraform init
 
-# 4. Plan — provide DB password via env var (never in tfvars!)
+# 4. Plan - provide DB password via env var (never in tfvars!)
 export TF_VAR_db_password="YourSecurePassword123!"
 terraform plan -var-file=environments/dev.tfvars -out=tfplan
 
@@ -756,7 +784,7 @@ psql -h 10.10.0.3 -p 5432 -U dhg-vaccinefee-user -d dhg-vaccinefee-db
 The FastAPI backend uses SQLAlchemy async models. The database contains 5 tables:
 
 ```sql
--- Hospitals (~150 rows — India, USA, Europe, Asia, Middle East)
+-- Hospitals (~150 rows - India, USA, Europe, Asia, Middle East)
 CREATE TABLE hospitals (
   id       SERIAL PRIMARY KEY,
   name     VARCHAR(200) NOT NULL,
@@ -764,7 +792,7 @@ CREATE TABLE hospitals (
   address  VARCHAR(500)            -- Full street address
 );
 
--- Vaccines (40 rows — real manufacturers and names)
+-- Vaccines (40 rows - real manufacturers and names)
 CREATE TABLE vaccines (
   id           SERIAL PRIMARY KEY,
   name         VARCHAR(200) NOT NULL,
@@ -791,7 +819,7 @@ CREATE TABLE pricing (
   stock_quantity    INTEGER
 );
 
--- Users (2 rows — bikram/Admin, viewer/Viewer)
+-- Users (2 rows - bikram/Admin, viewer/Viewer)
 CREATE TABLE users (
   id            SERIAL PRIMARY KEY,
   username      VARCHAR(50) UNIQUE NOT NULL,
@@ -854,28 +882,28 @@ The GitHub Secret `DB_PASSWORD` is injected as a Terraform variable at runtime. 
 ### 🛡️ Multi-Layer Database Security
 
 ```
-Layer 1 — No Public IP:    ipv4_enabled = false
-                           PSC only — no internet exposure at all
+Layer 1 - No Public IP:    ipv4_enabled = false
+                           PSC only - no internet exposure at all
 
-Layer 2 — PSC Isolation:   One-way tunnel — only our VPC can reach DB
+Layer 2 - PSC Isolation:   One-way tunnel - only our VPC can reach DB
                            No route propagation, no bidirectional access
 
-Layer 3 — Auth:            Username + bcrypt password
+Layer 3 - Auth:            Username + bcrypt password
                            Password stored as GitHub Secret
                            Never in code, never in logs, never in state
 
-Layer 4 — TLS:             Cloud SQL enforces SSL/TLS for all connections
+Layer 4 - TLS:             Cloud SQL enforces SSL/TLS for all connections
                            Certificate validation by default
 
-Layer 5 — GKE Access:      Only pods in dhg-rateauto-dev-namespace
+Layer 5 - GKE Access:      Only pods in dhg-rateauto-dev-namespace
                            connect via K8s Secret env vars
                            No hardcoded credentials in application code
 
-Layer 6 — Backups:         Encrypted at rest
+Layer 6 - Backups:         Encrypted at rest
                            Stored in multi-region US locations
                            7-day retention with final backup on delete
 
-Layer 7 — CI/CD:           WIF — no JSON keys
+Layer 7 - CI/CD:           WIF - no JSON keys
                            Password from GitHub Secret
                            Sensitive variables never logged
 ```
@@ -929,7 +957,7 @@ provider "google" {
 | Repository | Purpose | Deploy Order |
 |---|---|---|
 | [`dhg-rateauto-tf-vpc`](https://github.com/bikram-singh/dhg-rateauto-tf-vpc) | VPC, Subnet, NAT, Firewall | 1️⃣ First |
-| [`dhg-rateauto-tf-postgres`](https://github.com/bikram-singh/dhg-rateauto-tf-postgres) | **This repo** — Cloud SQL PostgreSQL + PSC | 2️⃣ Second (parallel with GKE) |
+| [`dhg-rateauto-tf-postgres`](https://github.com/bikram-singh/dhg-rateauto-tf-postgres) | **This repo** - Cloud SQL PostgreSQL + PSC | 2️⃣ Second (parallel with GKE) |
 | [`dhg-rateauto-tf-gke`](https://github.com/bikram-singh/dhg-rateauto-tf-gke) | GKE Autopilot Cluster | 2️⃣ Second (parallel with Postgres) |
 | [`dhg-rateauto-tf-gke-routing`](https://github.com/bikram-singh/dhg-rateauto-tf-gke-routing) | Gateway API, HTTPS, Routing | 3️⃣ Third |
 | [`dhg-rateauto-tf-gcs-buckets`](https://github.com/bikram-singh/dhg-rateauto-tf-gcs-buckets) | GCS Bucket Provisioning | 4️⃣ Independent |
