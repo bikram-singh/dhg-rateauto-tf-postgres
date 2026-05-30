@@ -81,17 +81,17 @@ The key architectural decision is **Private Service Connect (PSC)** - the databa
 
 ---
 
-### 🟢 Dev Instance - Details
+### 🟢 Dev Instance Details
 ![Postgres Dev Details](docs/gallery/postgres-dev-details.png)
 
 ---
 
-### 🟡 Test Instance - Details
+### 🟡 Test Instance Details
 ![Postgres Test Details](docs/gallery/postgres-test-details.png)
 
 ---
 
-### 🔵 Stage Instance - Details
+### 🔵 Stage Instance Details
 ![Postgres Stage Details](docs/gallery/postgres-stage-details.png)
 
 ---
