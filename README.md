@@ -96,7 +96,7 @@ The key architectural decision is **Private Service Connect (PSC)** - the databa
 
 ---
 
-### 🔌 PSC Endpoint - Private Service Connect
+### 🔌 Postgres PSC Endpoint
 ![PSC Endpoint](docs/gallery/postgres-psc-endpoint.png)
 
 ---
