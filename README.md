@@ -96,6 +96,11 @@ The key architectural decision is **Private Service Connect (PSC)** - the databa
 
 ---
 
+### 🔌 PSC Endpoint - Private Service Connect
+![PSC Endpoint](docs/gallery/postgres-psc-endpoint.png)
+
+---
+
 
 ## ⚡ Why Cloud SQL with PSC
 
